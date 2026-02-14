@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+
+# Data files (too large for git)
+hackathon/go-data-science-5-0/*.csv
+hackathon/data/
+*.csv
+!hackathon/go-data-science-5-0/sample_submission.csv
+
+# Model checkpoints (large files)
+hackathon/models/*.pt
+hackathon/models/*.pth
+hackathon/models/*.bin
+hackathon/models/*.h5
+*.pkl
+*.pickle
+
+# Kaggle credentials
+.kaggle/
+hackathon/.kaggle/
+
+# Logs
+*.log
+logs/
+wandb/
+mlruns/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+temp/
+tmp/
+
+# Submissions (optional - keep for tracking)
+# hackathon/submissions/*.csv
+
+# Large datasets
+*.zip
+*.tar.gz
+*.rar
