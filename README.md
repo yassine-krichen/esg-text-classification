@@ -24,7 +24,7 @@ Classify corporate text into 4 ESG categories (multi-label):
 
 ```bash
 # Clone repository
-git clone <your-repo-url>
+git clone https://github.com/yassine-krichen/esg-text-classification.git
 cd my_project/hackathon
 
 # Setup environment
@@ -248,7 +248,7 @@ Before Kaggle submission:
 
 ## 🏆 Goals
 
-- **Primary**: Win 1st place in the hackathon
+- **Primary**: Win in the hackathon
 - **Learning**: Master deep learning for NLP
 - **Impact**: Build production-ready ESG classifier
 - **Community**: Share knowledge with team
@@ -257,7 +257,7 @@ Before Kaggle submission:
 
 ## 📧 Contact
 
-**Team**: [Your Team Name]  
+**Team**: PoseiData  
 **Competition**: go-data-science-5-0  
 **Timeline**: Start: 8:00 PM, End: 10:00 AM
 
