@@ -82,7 +82,7 @@ my_project/
 
 - Model: TF-IDF + Logistic Regression
 - Training time: <1 minute
-- Validation Macro F1: ~0.75
+- Validation Macro F1: 0.640 (micro F1 0.712, macro ROC-AUC 0.848; from `hackathon/notebooks/02_baseline_model.ipynb`)
 - Kaggle Score: TBD
 
 ### 🔄 Phase 2: BERT Model (NEXT)
@@ -163,7 +163,7 @@ my_project/
 
 | Model              | Macro F1 (Val) | E F1 | S F1 | G F1 | non_ESG F1 | Training Time |
 | ------------------ | -------------- | ---- | ---- | ---- | ---------- | ------------- |
-| TF-IDF + LR        | ~0.75          | Low  | High | High | High       | <1 min        |
+| TF-IDF + LR        | 0.640          | 0.357 | 0.851 | 0.635 | 0.719     | <1 min        |
 | BERT (planned)     | ~0.80          | TBD  | TBD  | TBD  | TBD        | ~15 min       |
 | Ensemble (planned) | ~0.90+         | TBD  | TBD  | TBD  | TBD        | ~1 hour       |
 
@@ -229,7 +229,7 @@ Example:
 - Train Logistic Regression baseline
 - Add evaluation metrics
 
-Results: Val Macro F1 = 0.75
+Results: Val Macro F1 = 0.640
 ```
 
 ---
