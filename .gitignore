@@ -69,3 +69,10 @@ tmp/
 *.zip
 *.tar.gz
 *.rar
+
+# Third-party course material (do not publish)
+deep_learning_fundementals/
+
+# Competition data, weights and eval output
+*.pt
+hackathon/eval_out/

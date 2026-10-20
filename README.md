@@ -1,279 +1,76 @@
-# 🏆 ESG Text Classification Hackathon
+# ESG Text Classification
 
-> **Competition**: Multi-label classification of corporate ESG (Environmental, Social, Governance) text  
-> **Goal**: Build a winning deep learning model and master NLP fundamentals  
-> **Status**: 🔥 Phase 1 Complete - Baseline Model Submitted
+Multi-label classification of corporate text into Environmental (E), Social (S), Governance (G) and non_ESG, built for the GODS 5.0 data science hackathon (February 2026, IEEE ENSI). The repo compares a TF-IDF + logistic regression baseline with a fine-tuned `bert-base-uncased`.
 
----
+## Task and data
 
-## 📊 Problem Overview
+Each row is a short piece of corporate text with four binary labels (E, S, G, non_ESG). A row can carry more than one label. The competition training file has 26,750 rows; the test file has 2,000 rows without labels.
 
-Classify corporate text into 4 ESG categories (multi-label):
+The classes are imbalanced. E is rare (about 4.4% of rows); S and G are around a third each; non_ESG is about 43%.
 
-- **E** (Environmental) - Climate action, carbon emissions, resource efficiency
-- **S** (Social) - Employee welfare, diversity, community impact
-- **G** (Governance) - Board structure, compliance, ethics, transparency
-- **non_ESG** - General corporate information
+The competition data is not included in this repository. Download `train.csv` and `test.csv` from the GODS 5.0 competition page (Kaggle) and keep them out of version control (`.gitignore` already excludes the CSVs).
 
-**Dataset**: 26,750 training samples, 2,000 test samples  
-**Challenge**: Severe class imbalance (E: 4.41% vs non_ESG: 42.58%)
+## Approach
 
----
+1. Preprocessing: regex cleaning, empty rows dropped (26,750 to 26,697 rows), then an 80/20 multilabel-stratified split (`iterative-stratification`, seed 42): 21,373 train and 5,324 validation rows.
+2. Baseline: TF-IDF (10,000 features, 1-2 grams, English stop words) with one class-weighted logistic regression per label.
+3. BERT: `bert-base-uncased` with dropout 0.3 and a linear head, sigmoid outputs with binary cross-entropy, max length 256, 3 epochs, learning rate 2e-5, batch size 16, linear warmup schedule. The checkpoint with the best validation macro-F1 is kept.
 
-## 🚀 Quick Start
+## Results
+
+Validation split (n = 5,324), decision threshold 0.5, F1 scores.
+
+| Model | Macro-F1 | Micro-F1 | E | S | G | non_ESG |
+|---|---|---|---|---|---|---|
+| TF-IDF + logistic regression | 0.6403 | 0.7124 | 0.3566 | 0.8514 | 0.6345 | 0.7189 |
+| Fine-tuned BERT | 0.7439 | 0.7815 | 0.6220 | 0.9053 | 0.7027 | 0.7457 |
+| Difference | +0.1036 | +0.0691 | +0.2654 | +0.0539 | +0.0682 | +0.0268 |
+
+The largest gain is on the rare E class (0.357 to 0.622).
+
+Threshold tuning: per-label thresholds (grid 0.05 to 0.95) were tuned with 2-fold cross-fitting inside the validation set. This gives macro-F1 0.6421 for the baseline and 0.7457 for BERT, about +0.002 each, so 0.5 is close to optimal and the table above is the headline.
+
+### Caveats
+
+- The best checkpoint was selected on the same validation split that is reported. The best epoch was the last one (validation macro-F1 0.7085, 0.7393, 0.7439), so the selection effect should be small, but this is validation, not an untouched holdout.
+- One split and one seed, no confidence intervals. E has only 236 positives in validation, so its F1 is noisy by a few points.
+- No leaderboard or test-set score is claimed. Test labels were not used.
+- Both results were re-run from code and the saved checkpoint with `hackathon/scripts/evaluate.py`; the baseline matches the earlier 0.6403 and BERT matches the checkpoint's stored 0.7439.
+- `hackathon/notebooks/03_bert_model.ipynb` contains comparison cells that use a "0.75" baseline. That number is wrong (the notebook says so at the top); the baseline is 0.6403.
+
+## Reproduce
 
 ```bash
-# Clone repository
-git clone https://github.com/yassine-krichen/esg-text-classification.git
-cd my_project/hackathon
-
-# Setup environment
+cd hackathon
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+.venv\Scripts\activate          # Windows; use source .venv/bin/activate elsewhere
 pip install -r requirements.txt
-
-# Run baseline model
-jupyter notebook notebooks/02_baseline_model.ipynb
-
-# Generate submission
-python fix_submission.py
-# Upload: submissions/baseline_tfidf_lr_binary.csv
 ```
 
----
+Put `train.csv` and `test.csv` in `hackathon/go-data-science-5-0/`.
 
-## 📁 Repository Structure
+- Baseline: run `notebooks/02_baseline_model.ipynb`.
+- BERT: run `notebooks/03_bert_model.ipynb`. It saves `models/bert_best_model.pt`. Training took roughly 1.5 hours per epoch on a laptop RTX 3050 (4 GB); the original run used a GPU, the evaluation re-run used CPU.
+- Evaluate both models and reproduce the table:
 
-```
-my_project/
-├── hackathon/                    # Main competition project
-│   ├── notebooks/                # Jupyter notebooks
-│   │   └── 02_baseline_model.ipynb
-│   ├── src/                      # Reusable Python modules
-│   │   ├── config.py            # Configuration
-│   │   ├── preprocessing.py     # Text preprocessing
-│   │   └── evaluation.py        # Metrics & evaluation
-│   ├── go-data-science-5-0/     # Competition data (not in git)
-│   ├── submissions/             # Kaggle submission files
-│   ├── models/                  # Model checkpoints
-│   ├── ROADMAP.md              # Complete strategy (5 phases)
-│   ├── README.md               # Competition details
-│   └── requirements.txt        # Dependencies
-│
-├── deep_learning_fundementals/  # Course materials
-│   └── (NVIDIA DLI notebooks)
-│
-└── .gitignore                   # Git ignore rules
+```bash
+python scripts/evaluate.py --data-dir go-data-science-5-0 --checkpoint models/bert_best_model.pt
 ```
 
----
+BERT inference on CPU for the 5,324 validation rows takes about 37 minutes. Results go to `eval_out/results.json`.
 
-## 📈 Development Progress
+`test_bert_modules.py` is a smoke test for the dataset, model and training utilities.
 
-### ✅ Phase 1: Foundations & Baseline (COMPLETE)
-
-- [x] Data exploration & analysis
-- [x] Text preprocessing pipeline
-- [x] TF-IDF + Logistic Regression baseline
-- [x] Evaluation framework
-- [x] First Kaggle submission
-
-**Results**:
-
-- Model: TF-IDF + Logistic Regression
-- Training time: <1 minute
-- Validation Macro F1: 0.640 (micro F1 0.712, macro ROC-AUC 0.848; from `hackathon/notebooks/02_baseline_model.ipynb`)
-- Kaggle Score: TBD
-
-### 🔄 Phase 2: BERT Model (NEXT)
-
-- [ ] BERT tokenization & data loading
-- [ ] Fine-tuning architecture
-- [ ] Multi-label classification head
-- [ ] Training & validation loops
-- [ ] Hyperparameter tuning
-
-**Target**: F1 > 0.80 (+10-15% improvement)
-
-### 📅 Phase 3: Advanced Optimizations
-
-- [ ] Class imbalance handling (weighted loss, focal loss)
-- [ ] Long text strategies (chunking, hierarchical models)
-- [ ] Data augmentation (back-translation, synonym replacement)
-- [ ] Model variants (RoBERTa, DeBERTa)
-
-**Target**: F1 > 0.85
-
-### 📅 Phase 4: Ensemble & Winning Model
-
-- [ ] Multi-model ensemble
-- [ ] Pseudo-labeling (semi-supervised)
-- [ ] Test-time augmentation
-- [ ] Threshold optimization
-
-**Target**: F1 > 0.90, Top 3 position
-
-### 📅 Phase 5: Real-World Demo
-
-- [ ] Streamlit web application
-- [ ] Real-time ESG classification
-- [ ] Business use cases
-
----
-
-## 🛠️ Tech Stack
-
-| Component           | Technology                           |
-| ------------------- | ------------------------------------ |
-| **Deep Learning**   | PyTorch, Transformers (Hugging Face) |
-| **NLP**             | BERT, RoBERTa, Tokenizers            |
-| **ML Baseline**     | scikit-learn, TF-IDF                 |
-| **Data Processing** | pandas, numpy                        |
-| **Visualization**   | matplotlib, seaborn                  |
-| **Deployment**      | Streamlit, Gradio                    |
-
----
-
-## 🎓 Key Learnings
-
-### Data Insights
-
-- Multi-label complexity: 15.6% of samples have multiple labels
-- 200 samples have ALL 4 labels simultaneously
-- Text length varies: 33-5,630 characters (median: 176)
-- Label distribution: S (37%), G (33%), non_ESG (43%), E (4.41%)
-
-### Technical Challenges
-
-1. **Rare 'E' class** - Only 1,180 positive samples (4.41%)
-2. **Multi-label classification** - Not mutually exclusive categories
-3. **Long sequences** - BERT's 512 token limit requires chunking
-4. **Imbalanced evaluation** - Need per-class metrics, not just accuracy
-
-### Solutions Applied
-
-- Stratified multi-label train/validation split
-- Class-balanced Logistic Regression
-- Binary Cross Entropy loss for multi-label
-- Per-class F1, precision, recall metrics
-
----
-
-## 📊 Model Performance
-
-| Model              | Macro F1 (Val) | E F1 | S F1 | G F1 | non_ESG F1 | Training Time |
-| ------------------ | -------------- | ---- | ---- | ---- | ---------- | ------------- |
-| TF-IDF + LR        | 0.640          | 0.357 | 0.851 | 0.635 | 0.719     | <1 min        |
-| BERT (planned)     | ~0.80          | TBD  | TBD  | TBD  | TBD        | ~15 min       |
-| Ensemble (planned) | ~0.90+         | TBD  | TBD  | TBD  | TBD        | ~1 hour       |
-
----
-
-## 📖 Course Materials Applied
-
-This project applies concepts from the NVIDIA Deep Learning Fundamentals course:
-
-| Notebook                              | Concept Applied               | Our Implementation   |
-| ------------------------------------- | ----------------------------- | -------------------- |
-| **06_nlp.ipynb**                      | BERT tokenization, embeddings | Text classification  |
-| **07_assessment.ipynb**               | Transfer learning, VGG16      | BERT fine-tuning     |
-| **05b_presidential_doggy_door.ipynb** | Data augmentation             | Text augmentation    |
-| **utils.py**                          | Training loops                | Multi-label training |
-
----
-
-## 🎯 Competition Rules Compliance
-
-✅ **Allowed**:
-
-- Pretrained models (BERT, RoBERTa, etc.)
-- Public libraries (PyTorch, Transformers, sklearn)
-- Data augmentation techniques
-
-❌ **Prohibited**:
-
-- External ESG datasets
-- LLMs (GPT-4, Claude, Gemini)
-- AutoML tools
-- External forums/help
-
----
-
-## 🤝 Contributing
-
-This is a hackathon competition project. Team collaboration guidelines:
-
-1. **Code Quality**: Follow PEP 8, add docstrings
-2. **Notebooks**: Clear markdown explanations, reproducible
-3. **Commits**: Descriptive messages (see below)
-4. **Experiments**: Log all hyperparameters and results
-
-### Commit Message Format
+## Repository layout
 
 ```
-[Phase X] Brief description
-
-- Detailed change 1
-- Detailed change 2
-
-Results: Metric improvements
+hackathon/
+  src/                  config, preprocessing, data loader, BERT classifier, training utils, metrics
+  notebooks/            02_baseline_model, 03_bert_model
+  scripts/evaluate.py   re-run both models on the validation split
+  analyze_data.py       quick label statistics
+  fix_submission.py     submission file formatting
+  test_bert_modules.py  smoke test
+  go-data-science-5-0/  sample_submission.csv only (competition data not included)
+  requirements.txt
 ```
-
-Example:
-
-```
-[Phase 1] Add TF-IDF baseline model
-
-- Implement text preprocessing pipeline
-- Create stratified multi-label split
-- Train Logistic Regression baseline
-- Add evaluation metrics
-
-Results: Val Macro F1 = 0.640
-```
-
----
-
-## 📝 Submission Checklist
-
-Before Kaggle submission:
-
-- [ ] Binary predictions (0 or 1), not probabilities
-- [ ] Correct format: id, E, S, G, non_ESG
-- [ ] 2,000 rows (one per test sample)
-- [ ] No NaN values
-- [ ] File saved in `submissions/` directory
-
----
-
-## 🏆 Goals
-
-- **Primary**: Win in the hackathon
-- **Learning**: Master deep learning for NLP
-- **Impact**: Build production-ready ESG classifier
-- **Community**: Share knowledge with team
-
----
-
-## 📧 Contact
-
-**Team**: PoseiData  
-**Competition**: go-data-science-5-0  
-**Timeline**: Start: 8:00 PM, End: 10:00 AM
-
----
-
-## 🙏 Acknowledgments
-
-- NVIDIA Deep Learning Institute for foundational course
-- Hugging Face for Transformers library
-- scikit-learn for baseline utilities
-- Kaggle for hosting the competition
-
----
-
-**Last Updated**: February 14, 2026  
-**Current Phase**: 1 → 2 (Transitioning to BERT)  
-**Next Milestone**: BERT model submission, F1 > 0.80
-
-🚀 Let's win this! 🏆
